@@ -22,7 +22,7 @@ class IntensityThrottle
     /**
      * @var string
      */
-    protected $namespace;
+    protected $name;
 
     protected $max_interval = 0;
 
@@ -35,12 +35,12 @@ class IntensityThrottle
 
     /**
      * IntensityThrottle constructor.
+     * @param string $name
      * @param KeyValuePersistenceInterface $storage
-     * @param string $namespace
      */
-    public function __construct($storage = null, $namespace = '')
+    public function __construct($name = '', $storage = null)
     {
-        $this->namespace = $namespace;
+        $this->name = $name;
 
         if ($storage instanceof KeyValuePersistenceInterface) {
             $this->storage = $storage;
@@ -51,24 +51,38 @@ class IntensityThrottle
 
     public function hit()
     {
-        $this->leakOut();
-        $this->setLastHitTime();
+        $result = true;
+        $this->leak();
         for ($i = 0; $i < count($this->leaky_buckets); $i++) {
+            $this->storage->add($this->getCounterKey($i), 0, $this->max_interval);
             if ($this->storage->increment($this->getCounterKey($i), self::PRECISION) > $this->leaky_buckets[$i]['capacity']) {
-                return $i;
+                $result = false;
             }
+
+//            echo $i.': after hit: '.$this->storage->get($this->getCounterKey($i)). "\n ";
         }
 
-        return true;
+        return $result;
     }
 
-    protected function leakOut()
+    protected function leak()
     {
+        $micro_time = microtime(true);
         for ($i = 0; $i < count($this->leaky_buckets); $i++) {
-            $to_leak = intval($this->leaky_buckets[$i]['leak_rate'] * (microtime(true) - $this->getLastHitTime()));
-            $to_leak = max($to_leak, 1);
+//            $last_leak_time = $this->getLastLeakTime($i);
+            
+            $to_leak = intval($this->leaky_buckets[$i]['leak_rate'] * ($micro_time - $this->getLastLeakTime($i)));
+            if ($to_leak <= 0){
+                //nothing to leak, skip this bucket
+                continue;
+            }
+
+            $this->setLastLeakTime($i, $micro_time);
+
+            $this->storage->add($this->getCounterKey($i), 0, $this->max_interval);
             $bucket_level = $this->storage->decrement($this->getCounterKey($i), $to_leak);
-            if ($bucket_level < 0){
+//            echo $i . ': after leak: ' . $bucket_level . "\n";
+            if ($bucket_level < 0) {
                 $this->reset($i);
             }
         }
@@ -79,7 +93,7 @@ class IntensityThrottle
      * @param $interval_seconds
      * @return int ID of the added interval
      */
-    public function addInterval($max_hits, $interval_seconds)
+    public function addLimit($max_hits, $interval_seconds)
     {
         $this->leaky_buckets[] = [
             'capacity' => $max_hits * self::PRECISION,
@@ -88,6 +102,8 @@ class IntensityThrottle
         ];
 
         $this->max_interval = max($this->max_interval, $interval_seconds);
+
+        $this->setLastLeakTime(count($this->leaky_buckets) - 1, microtime(true));
 
         return count($this->leaky_buckets);
     }
@@ -109,27 +125,27 @@ class IntensityThrottle
         return $this->storage->get($this->getCounterKey($interval_id), 0);
     }
 
-    protected function getLastHitTime()
+    protected function getLastLeakTime($i)
     {
-        $this->storage->get($this->getLastHitTimeKey(), 0);
+        return $this->storage->get($this->getLastLeakTimeKey($i), 0);
     }
 
-    protected function setLastHitTime()
+    protected function setLastLeakTime($i, $micro_time)
     {
         $this->storage->set(
-            $this->getLastHitTimeKey(),
-            microtime(true),
+            $this->getLastLeakTimeKey($i),
+            $micro_time,
             $this->max_interval);
     }
 
     protected function getCounterKey($interval_id)
     {
-        return __METHOD__ . $this->namespace . ':' . $interval_id;
+        return __METHOD__ . $this->name . ':' . $interval_id;
     }
 
-    protected function getLastHitTimeKey()
+    protected function getLastLeakTimeKey($i)
     {
-        return __METHOD__ . $this->namespace;
+        return __METHOD__ . $i . ':' . $this->name;
     }
 
 }

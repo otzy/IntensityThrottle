@@ -38,7 +38,6 @@ class inProcessStorageTest extends \PHPUnit_Framework_TestCase
         $this->assertEquals($this->storage->increment('inc_test'), 1);
         $this->assertEquals($this->storage->increment('inc_test', 4), 5);
         $this->assertEquals($this->storage->decrement('inc_test', 3), 2);
-
     }
 
 }
