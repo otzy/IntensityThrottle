@@ -8,7 +8,6 @@
 
 namespace Otzy\Intensity;
 
-
 class IntensityThrottle
 {
     /**
@@ -25,6 +24,11 @@ class IntensityThrottle
     protected $name;
 
     protected $max_interval = 0;
+
+    /**
+     * @var int microseconds
+     */
+    protected $lock_timeout = 300000;
 
     /**
      * @var KeyValuePersistenceInterface
@@ -52,6 +56,8 @@ class IntensityThrottle
     public function hit()
     {
         $result = true;
+
+        $this->lockStorage($this->lock_timeout);
         $this->leak();
         for ($i = 0; $i < count($this->leaky_buckets); $i++) {
             $this->storage->add($this->getCounterKey($i), 0, $this->max_interval);
@@ -62,6 +68,7 @@ class IntensityThrottle
 //            echo $i.': after hit: '.$this->storage->get($this->getCounterKey($i)). "\n ";
         }
 
+        $this->unlockStorage();
         return $result;
     }
 
@@ -120,6 +127,18 @@ class IntensityThrottle
         }
     }
 
+    /**
+     * @param int $lock_timeout microseconds. Must be >=1000
+     */
+    public function setLockTimeout($lock_timeout)
+    {
+        if ($lock_timeout < 1000){
+            throw new \InvalidArgumentException('Lock timeout must be >= 1000');
+        }
+
+        $this->lock_timeout = $lock_timeout;
+    }
+
     protected function getCurrentLevel($interval_id)
     {
         return $this->storage->get($this->getCounterKey($interval_id), 0);
@@ -146,6 +165,28 @@ class IntensityThrottle
     protected function getLastLeakTimeKey($i)
     {
         return __METHOD__ . $i . ':' . $this->name;
+    }
+
+    /**
+     * @param int $timeout microseconds
+     * @return bool
+     * @throws
+     */
+    protected function lockStorage($timeout){
+        $key = 'otzy/throttle/locker/' .$this->name;
+        $start = microtime(true);
+        while (!$this->storage->add($key, 1, $timeout*10)){
+            if ((microtime(true) - $start) > $timeout ){
+                throw new LockTimeoutException('Can not lock the storage. Lock timeout exceeded.');
+            }
+            usleep(intval($timeout / 10));
+        }
+
+        return true;
+    }
+
+    protected function unlockStorage(){
+        $this->storage->delete('otzy/throttle/locker/' .$this->name);
     }
 
 }

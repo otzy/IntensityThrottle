@@ -25,7 +25,7 @@ class IntensityThrottleFunctionalTest extends \PHPUnit_Framework_TestCase
             $hit_result = $throttle->hit();
 
             if ($hit_result === false){
-                echo 'Throttle Test: Hits limit exceeded as expected after '.(microtime(true) - $start)." seconds.\n\n";
+                printf("Throttle Test: Hits limit exceeded as expected after %.3f seconds.", (microtime(true) - $start));
                 $this->assertTrue(true);
                 return;
             }
