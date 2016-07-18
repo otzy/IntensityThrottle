@@ -1,11 +1,11 @@
 #IntensityThrottle
 
-With IntensityThrottle package you can easily limit the rate of event of any kind. For example you can keep an eye on the rate of requests to your servers or the rate of errors in cron jobs.
+With IntensityThrottle package you can easily limit the rate of events of any kind. For example you can keep an eye on the rate of requests to your servers or the rate of errors in cron jobs.
 
 IntensityThrottle implements [Leaky Bucket](https://en.wikipedia.org/wiki/Leaky_bucket) algorithm, which means that you are able to set not only bandwidth, 
 but burstiness as well. That is to say, short spikes in the event rate are possible.
 
-Due to the nature of php the leakage happens not on regular basis (not continuously),
+Due to the nature of php, the leakage happens not on regular basis (not continuously),
 but at the moment when an event is being handled. This changes the behavior of buckets a bit, but in the end they do their job.
 
 ##Usage
@@ -16,6 +16,7 @@ Package comes with InProcessStorage, which can be used when you need to limit ev
 use Otzy\Intensity\InProcessStorage;
 use Otzy\Intensity\IntensityThrottle;
 
+//Create throttle
 $throttle = new IntensityThrottle('test', new InProcessStorage());
 
 //add leaky bucket to the throttle. You can add so many buckets as you wish
@@ -42,7 +43,7 @@ for ($i = 0; $i < 100; $i++) {
 ```
 
 
-If you want to throttle web requests or any other events across different request and/or servers, you should use memcached.
+If you want to throttle web requests or any other events across different requests and/or servers, you should use memcached server.
 You can use Memcached class directly as a storage:
 
 ```
@@ -54,9 +55,9 @@ $throttle = new IntensityThrottle('test', $memcached);
 
 ##Bucket volume
 
-$throttle->addLimit($max_drops, $time_span) adds a bucket with volume=$max_drops.
+`$throttle->addLimit($max_drops, $time_span)` adds a bucket with volume=$max_drops.
 
-At first glance, $throttle->addLimit(3, 1) and $throttle->addLimit(6, 2) are the same. The second bucket has twice bigger volume and twice higher leakage rate.
+At first glance, `$throttle->addLimit(3, 1)` and `$throttle->addLimit(6, 2)` are the same. The second bucket has twice bigger volume and twice higher leakage rate.
 So if the average rate of incoming events will be 3 events/second, both buckets will not overflow.
 
 The difference is that second bucket is capable to support a higher burstiness rate, i.e. temporary unevenness in the event flow.
