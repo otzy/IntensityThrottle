@@ -1,6 +1,6 @@
 {
     "name": "otzy/intensity-throttle",
-    "description": "limets the rate of event of any kind using leaky bucket algorithm",
+    "description": "limits the rate of event of any kind using leaky bucket algorithm",
     "keywords": ["throttle", "intensity", "leaky bucket"],
     "type": "library",
     "license": "MIT",
