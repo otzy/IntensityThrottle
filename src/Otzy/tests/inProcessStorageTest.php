@@ -1,5 +1,4 @@
 <?php
-//namespace Otzy\Intensity;
 
 use Otzy\Intensity\InProcessStorage;
 
