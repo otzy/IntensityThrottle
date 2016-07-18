@@ -1,5 +1,7 @@
 <?php
-namespace Otzy\Intensity;
+//namespace Otzy\Intensity;
+
+use Otzy\Intensity\InProcessStorage;
 
 class inProcessStorageTest extends \PHPUnit_Framework_TestCase
 {

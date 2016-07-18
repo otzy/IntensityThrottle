@@ -1,19 +1,20 @@
 <?php
-namespace Otzy\Intensity;
+use Otzy\Intensity\InProcessStorage;
+use Otzy\Intensity\IntensityThrottle;
 
 class IntensityThrottleFunctionalTest extends \PHPUnit_Framework_TestCase
 {
 
     protected $limits = [
         ['max_hits' => 3, 'interval_seconds' => 1],
-        ['max_hits' => 5, 'interval_seconds' => 1],
+//        ['max_hits' => 5, 'interval_seconds' => 1],
     ];
 
 
     /**
      * we test with inProcessStorage and Memcached
      *
-     * @return StorageInterface[]
+     * @return \Otzy\Intensity\StorageInterface[]
      */
     public function storages()
     {

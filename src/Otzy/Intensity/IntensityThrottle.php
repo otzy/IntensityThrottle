@@ -96,15 +96,15 @@ class IntensityThrottle
     }
 
     /**
-     * @param $max_hits
+     * @param $max_drops
      * @param $interval_seconds
      * @return int ID of the added interval
      */
-    public function addLimit($max_hits, $interval_seconds)
+    public function addLimit($max_drops, $interval_seconds)
     {
         $this->leaky_buckets[] = [
-            'capacity' => $max_hits * self::PRECISION,
-            'leak_rate' => $max_hits * self::PRECISION / $interval_seconds,
+            'capacity' => $max_drops * self::PRECISION,
+            'leak_rate' => $max_drops * self::PRECISION / $interval_seconds,
             'interval' => $interval_seconds
         ];
 
