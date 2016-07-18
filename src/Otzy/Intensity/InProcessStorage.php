@@ -1,7 +1,7 @@
 <?php
 namespace Otzy\Intensity;
 
-class InProcessStorage implements KeyValuePersistenceInterface
+class InProcessStorage implements StorageInterface
 {
 
     private $data = array();
@@ -52,10 +52,10 @@ class InProcessStorage implements KeyValuePersistenceInterface
         return true;
     }
 
-    public function get($key, $default = false)
+    public function get($key)
     {
        if ($this->unsetExpired($key)){
-           return $default;
+           return false;
        }
 
         return $this->data[$key]['value'];

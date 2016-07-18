@@ -31,7 +31,7 @@ class IntensityThrottle
     protected $lock_timeout = 300000;
 
     /**
-     * @var KeyValuePersistenceInterface
+     * @var StorageInterface
      */
     protected $storage;
 
@@ -40,20 +40,20 @@ class IntensityThrottle
     /**
      * IntensityThrottle constructor.
      * @param string $name
-     * @param KeyValuePersistenceInterface $storage
+     * @param StorageInterface $storage
      */
     public function __construct($name = '', $storage = null)
     {
         $this->name = $name;
 
-        if ($storage instanceof KeyValuePersistenceInterface) {
+        if ($storage instanceof StorageInterface) {
             $this->storage = $storage;
         } else {
             $this->storage = new InProcessStorage();
         }
     }
 
-    public function hit()
+    public function drip()
     {
         $result = true;
 
@@ -141,12 +141,21 @@ class IntensityThrottle
 
     protected function getCurrentLevel($interval_id)
     {
-        return $this->storage->get($this->getCounterKey($interval_id), 0);
+        $result = $this->storage->get($this->getCounterKey($interval_id));
+        if ($result === false){
+            return 0;
+        }
+
+        return $result;
     }
 
     protected function getLastLeakTime($i)
     {
-        return $this->storage->get($this->getLastLeakTimeKey($i), 0);
+        $result = $this->storage->get($this->getLastLeakTimeKey($i));
+        if ($result === false){
+            return 0;
+        }
+        return $result;
     }
 
     protected function setLastLeakTime($i, $micro_time)

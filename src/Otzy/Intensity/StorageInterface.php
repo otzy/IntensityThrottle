@@ -9,7 +9,7 @@
 namespace Otzy\Intensity;
 
 
-interface KeyValuePersistenceInterface
+interface StorageInterface
 {
     public function add($key, $value, $expire);
 
@@ -17,10 +17,9 @@ interface KeyValuePersistenceInterface
 
     /**
      * @param string $key
-     * @param mixed $default
-     * @return mixed
+     * @return mixed returns boolean false if key does not exist
      */
-    public function get($key, $default);
+    public function get($key);
 
     /**
      * @param string $key

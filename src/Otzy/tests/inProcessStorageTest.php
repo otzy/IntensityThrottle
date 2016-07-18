@@ -24,7 +24,7 @@ class inProcessStorageTest extends \PHPUnit_Framework_TestCase
 
         //test expired value
         sleep(3);
-        $this->assertEquals($this->storage->get('v1', 'zzz'), 'zzz');
+        $this->assertFalse($this->storage->get('v1'));
     }
 
     /**

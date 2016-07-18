@@ -9,31 +9,55 @@ class IntensityThrottleFunctionalTest extends \PHPUnit_Framework_TestCase
         ['max_hits' => 5, 'interval_seconds' => 1],
     ];
 
+
+    /**
+     * we test with inProcessStorage and Memcached
+     *
+     * @return StorageInterface[]
+     */
+    public function storages()
+    {
+        static $result = false;
+
+        if (!is_array($result)) {
+            $result = [];
+            $result[] = new InProcessStorage();
+
+//            $memcached = new \Memcached();
+//            $memcached->addServer('192.168.33.100', 11211);
+//            $result[] = $memcached;
+        }
+        return $result;
+    }
+
     /**
      * @test
      */
     public function runCases()
     {
-        $throttle = new IntensityThrottle('test', new InProcessStorage());
+        foreach ($this->storages() as $storage) {
 
-        foreach ($this->limits as $limit) {
-            $throttle->addLimit($limit['max_hits'], $limit['interval_seconds']);
-        }
+            $throttle = new IntensityThrottle('test', $storage);
 
-        $start = microtime(true);
-        for ($i = 0; $i < 100; $i++) {
-            $hit_result = $throttle->hit();
-
-            if ($hit_result === false){
-                printf("Throttle Test: Hits limit exceeded as expected after %.3f seconds.", (microtime(true) - $start));
-                $this->assertTrue(true);
-                return;
+            foreach ($this->limits as $limit) {
+                $throttle->addLimit($limit['max_hits'], $limit['interval_seconds']);
             }
 
-            usleep(250000);
-        }
+            $start = microtime(true);
+            for ($i = 0; $i < 100; $i++) {
+                $hit_result = $throttle->drip();
 
-        $this->assertTrue(false, 'Hits limit had to exceed, but it\'s not.');
+                if ($hit_result === false) {
+                    printf("Throttle Test: Drops limit exceeded as expected after %.3f seconds.", (microtime(true) - $start));
+                    $this->assertTrue(true);
+                    return;
+                }
+
+                usleep(250000);
+            }
+
+            $this->assertTrue(false, 'Drops limit had to exceed, but it\'s not.');
+        }
     }
 
 }
